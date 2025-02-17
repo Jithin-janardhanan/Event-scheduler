@@ -78,67 +78,126 @@ class _SheduleTaskState extends State<SheduleTask> {
     DateTime now = DateTime.now();
     DateTime? dateTime;
 
-    // Check for relative date references
-    if (text.contains('today')) {
-      dateTime = DateTime(now.year, now.month, now.day - 1);
-    } else if (text.contains('day after tomorrow')) {
-      dateTime = DateTime(now.year, now.month, now.day + 2);
-    } else if (text.contains('next week')) {
-      dateTime = DateTime(now.year, now.month, now.day + 7);
-    } else if (text.contains('tomorrow')) {
-      dateTime = DateTime(now.year, now.month, now.day + 1);
-    } else {
-      dateTime = DateTime(now.year, now.month, now.day - 1);
+    // Clean up the text - remove periods from a.m./p.m. format
+    String cleanedText = text
+        .replaceAll(RegExp(r'a\.m\.', caseSensitive: false), 'am')
+        .replaceAll(RegExp(r'p\.m\.', caseSensitive: false), 'pm');
+
+    // Extract AM/PM from text first
+    String period = '';
+    RegExp periodRegex = RegExp(r'\b(am|pm)\b', caseSensitive: false);
+    Match? periodMatch = periodRegex.firstMatch(cleanedText.toLowerCase());
+    if (periodMatch != null && periodMatch.group(1) != null) {
+      period = periodMatch.group(1)!.toLowerCase();
     }
 
-    // Check for time of day references
-    if (text.contains('morning') || text.contains('am')) {
-      dateTime = DateTime(dateTime.year, dateTime.month, dateTime.day, 9, 0);
-    } else if (text.contains('afternoon') || text.contains('p.m.')) {
-      dateTime = DateTime(dateTime.year, dateTime.month, dateTime.day, 14, 0);
-    } else if (text.contains('evening') || text.contains('pm')) {
-      dateTime = DateTime(dateTime.year, dateTime.month, dateTime.day, 18, 0);
-    } else if (text.contains('night') || text.contains('pm')) {
-      dateTime = DateTime(dateTime.year, dateTime.month, dateTime.day, 20, 0);
+    // Normalize the text to lowercase for consistent matching
+    String lowerText = cleanedText.toLowerCase();
+
+    // Check for relative date references
+    if (lowerText.contains('today') || lowerText.contains('naale')) {
+      dateTime = DateTime(now.year, now.month, now.day);
+    } else if (lowerText.contains('day after tomorrow') ||
+        lowerText.contains('mattanale')) {
+      dateTime = DateTime(now.year, now.month, now.day + 2);
+    } else if (lowerText.contains('next week')) {
+      dateTime = DateTime(now.year, now.month, now.day + 7);
+    } else if (lowerText.contains('tomorrow')) {
+      dateTime = DateTime(now.year, now.month, now.day + 1);
+    } else {
+      // Default to today if no date mentioned (important fix)
+      dateTime = DateTime(now.year, now.month, now.day);
     }
+
+    // Default time (9 AM)
+    int hour = 9;
+    int minute = 0;
 
     // Look for specific time patterns
     final List<RegExp> timePatterns = [
       RegExp(r'\b(\d{1,2}):(\d{2})(?:\s*(am|pm))?\b', caseSensitive: false),
       RegExp(r'\b(\d{1,2})\s*(am|pm)\b', caseSensitive: false),
       RegExp(r"\b(\d{1,2})\s*o'?clock\b", caseSensitive: false),
+      RegExp(r'\b(\d{1,2})\.(\d{2})(?:\s*(am|pm))?\b',
+          caseSensitive: false), // For times like 3.00pm
     ];
 
     for (RegExp pattern in timePatterns) {
-      Match? match = pattern.firstMatch(text);
+      Match? match = pattern.firstMatch(cleanedText);
       if (match != null) {
-        int hour = int.parse(match.group(1)!);
-        int minute = 0;
+        hour = int.parse(match.group(1)!);
 
-        if (match.groupCount >= 2 && match.group(2) != null) {
+        // Handle minutes if available
+        if (match.groupCount >= 2 &&
+            match.group(2) != null &&
+            !match.group(2)!.toLowerCase().contains('am') &&
+            !match.group(2)!.toLowerCase().contains('pm')) {
           minute = int.parse(match.group(2)!);
         }
 
-        String? period =
+        // Handle period (am/pm) from match if available
+        String? matchPeriod =
             match.groupCount >= 3 ? match.group(3)?.toLowerCase() : null;
-        if (period == 'pm' && hour < 12) {
-          hour += 12;
-        } else if (period == 'am' && hour == 12) {
-          hour = 0;
+        if (matchPeriod == null && match.groupCount >= 2) {
+          if (match.group(2)?.toLowerCase() == 'am' ||
+              match.group(2)?.toLowerCase() == 'pm') {
+            matchPeriod = match.group(2)?.toLowerCase();
+          }
         }
 
-        dateTime = DateTime(
-          dateTime!.year,
-          dateTime.month,
-          dateTime.day,
-          hour,
-          minute,
-        );
+        // Use period from match if available, otherwise use the one found earlier
+        if (matchPeriod != null) {
+          period = matchPeriod;
+        }
+
         break;
       }
     }
 
-    if (dateTime!.isBefore(now)) {
+    // Process time references if no specific time found
+    if (period.isEmpty) {
+      if (lowerText.contains('morning')) {
+        hour = 9;
+        period = 'am';
+      } else if (lowerText.contains('afternoon')) {
+        hour = 2;
+        period = 'pm';
+      } else if (lowerText.contains('evening')) {
+        hour = 6;
+        period = 'pm';
+      } else if (lowerText.contains('night')) {
+        hour = 8;
+        period = 'pm';
+      }
+    }
+
+    // Convert hour based on AM/PM
+    if (period == 'pm' && hour < 12) {
+      hour += 12;
+    } else if (period == 'am' && hour == 12) {
+      hour = 0;
+    }
+
+    // Update dateTime with the hour and minute
+    dateTime = DateTime(
+      dateTime.year,
+      dateTime.month,
+      dateTime.day,
+      hour,
+      minute,
+    );
+
+    // Only adjust if both are on the same day
+    bool isSameDay = dateTime.year == now.year &&
+        dateTime.month == now.month &&
+        dateTime.day == now.day;
+
+    // Only adjust past times when specifically scheduling for today
+    if (lowerText.contains('today') && isSameDay && dateTime.isBefore(now)) {
+      // Do not adjust - keep it on today even if time has passed
+    } else if (dateTime.isBefore(now) && isSameDay) {
+      // If it's today and the time has already passed but "today" wasn't specified,
+      // then assume tomorrow
       dateTime = dateTime.add(const Duration(days: 1));
     }
 

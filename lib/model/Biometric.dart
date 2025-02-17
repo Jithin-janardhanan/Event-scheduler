@@ -31,7 +31,7 @@ class _BiometricState extends State<Biometric> {
             if (isAuthenticated) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => SheduleTask()),
+                MaterialPageRoute(builder: (context) => Dummyhomepage()),
               );
             } else {
               Navigator.pushReplacement(
@@ -68,7 +68,7 @@ class _BiometricState extends State<Biometric> {
           if (context.mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => SheduleTask()),
+              MaterialPageRoute(builder: (context) => Dummyhomepage()),
             );
           }
         } else {

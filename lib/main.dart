@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       color: Colors.white,
       debugShowCheckedModeBanner: false,
-      home: Dummyhomepage(),
+      home: SplashScreen(),
     );
   }
 }
