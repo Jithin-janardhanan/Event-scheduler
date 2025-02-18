@@ -1,10 +1,10 @@
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:new_todo/view/dummyhomepage.dart';
 
 import 'package:new_todo/view/resetpassword.dart';
 import 'package:new_todo/view/signup.dart';
-import 'package:new_todo/view/userhomepage.dart';
+
 
 class Loginpage extends StatefulWidget {
   const Loginpage({super.key});
@@ -37,7 +37,7 @@ class _LoginpageState extends State<Loginpage> {
       if (userCredential.user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => Dummyhomepage()),
         );
       }
     } catch (e) {
@@ -69,7 +69,6 @@ class _LoginpageState extends State<Loginpage> {
                 'Welcome Back',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
-              
               SizedBox(height: 20),
               TextFormField(
                 controller: _emailController,
@@ -112,7 +111,8 @@ class _LoginpageState extends State<Loginpage> {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => ForgotPasswordScreen()),
                   );
                 },
                 child: Text('Forgot Password?'),

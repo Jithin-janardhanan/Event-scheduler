@@ -1,8 +1,9 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:new_todo/view/dummyhomepage.dart';
 import 'package:new_todo/view/loginPage.dart';
-import 'userhomepage.dart';
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -34,12 +35,11 @@ class _SignUpPageState extends State<SignUpPage> {
         );
 
         String username = _usernameController.text.trim();
-        final user = _auth.currentUser;
+
         await FirebaseFirestore.instance
             .collection('Users')
             .doc(userCredential.user!.uid)
             .set({
-          'userId': userCredential.user!.uid,
           'username': username,
           'email': _emailController.text.trim(),
           'created_at': DateTime.now(),
@@ -47,7 +47,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => HomePage()),
+          MaterialPageRoute(builder: (context) => Dummyhomepage()),
         );
 
         ScaffoldMessenger.of(context).showSnackBar(
