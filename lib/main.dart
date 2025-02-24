@@ -2,12 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:new_todo/model/Authentication_service.dart';
 import 'package:new_todo/model/notification_sevice.dart';
-import 'package:new_todo/model/Biometric.dart';
 import 'package:new_todo/view/SplashScreen.dart';
-import 'package:new_todo/view/TextSheduler.dart';
-import 'package:new_todo/view/dummyhomepage.dart';
-import 'package:new_todo/view/loginPage.dart';
-import 'package:new_todo/view/userhomepage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();

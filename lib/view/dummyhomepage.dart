@@ -21,8 +21,8 @@ class _DummyhomepageState extends State<Dummyhomepage> {
 
   @override
   Widget build(BuildContext context) {
-    const Color sandColor = Color.fromARGB(255, 237, 237, 205);
-    const Color button = Color.fromARGB(255, 0, 0, 0);
+    const Color sandColor = Colors.white;
+    const Color button = Color.fromARGB(255, 21, 101, 192);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,11 +44,11 @@ class _DummyhomepageState extends State<Dummyhomepage> {
             if (!snapshot.hasData || !snapshot.data!.exists) {
               return const Text("User not found");
             }
-
             final userData = snapshot.data!.data() as Map<String, dynamic>;
             return Text(
               "Hi, ${userData['username'] ?? 'User'}!",
-              style: const TextStyle(fontSize: 17),
+              style:
+                  TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
             );
           },
         ),
@@ -93,226 +93,226 @@ class _DummyhomepageState extends State<Dummyhomepage> {
         ],
       ),
       backgroundColor: sandColor,
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Column(
-          children: [
-            // Search Bar
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12.0),
-              child: TextFormField(
-                controller: _searchController,
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  prefixIcon: const Icon(Icons.search, color: button),
-                  fillColor: Colors.white,
-                  filled: true,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 11.0),
+      body: Column(
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.all(13.0),
+            child: TextFormField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search',
+                prefixIcon: const Icon(Icons.search, color: button),
+                fillColor: Colors.white,
+                filled: true,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
-                onChanged: (value) {
-                  setState(() {});
-                },
+                contentPadding: const EdgeInsets.symmetric(vertical: 11.0),
               ),
+              onChanged: (value) {
+                setState(() {});
+              },
             ),
+          ),
 
-            const SizedBox(height: 10),
+          const SizedBox(height: 10),
 
-            // Firestore Notifications List
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: _auth.currentUser == null
-                    ? null
-                    : _firestore
-                        .collection('notifications')
-                        .where('userId', isEqualTo: _auth.currentUser?.uid)
-                        .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasError) {
-                    return const Center(
-                      child: Text('Error loading notifications',
-                          style: TextStyle(color: Colors.red)),
-                    );
-                  }
+          // Firestore Notifications List
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _auth.currentUser == null
+                  ? null
+                  : _firestore
+                      .collection('notifications')
+                      .where('userId', isEqualTo: _auth.currentUser?.uid)
+                      .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Text('Error loading notifications',
+                        style: TextStyle(color: Colors.red)),
+                  );
+                }
 
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return const Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.notifications_none,
-                              size: 64, color: Colors.grey),
-                          SizedBox(height: 16),
-                          Text('No tasks scheduled',
-                              style:
-                                  TextStyle(fontSize: 18, color: Colors.grey)),
-                        ],
-                      ),
-                    );
-                  }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.notifications_none,
+                            size: 64, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('No tasks scheduled',
+                            style: TextStyle(fontSize: 18, color: Colors.grey)),
+                      ],
+                    ),
+                  );
+                }
 
-                  final searchQuery = _searchController.text.toLowerCase();
-                  final filteredDocs = snapshot.data!.docs.where((doc) {
+                final searchQuery = _searchController.text.toLowerCase();
+                final filteredDocs = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return data['title']
+                      .toString()
+                      .toLowerCase()
+                      .contains(searchQuery);
+                }).toList();
+
+                return ListView.builder(
+                  itemCount: filteredDocs.length,
+                  itemBuilder: (context, index) {
+                    final doc = filteredDocs[index];
                     final data = doc.data() as Map<String, dynamic>;
-                    return data['title']
-                        .toString()
-                        .toLowerCase()
-                        .contains(searchQuery);
-                  }).toList();
+                    final DateTime scheduledTime =
+                        DateTime.parse(data['scheduledTime']);
+                    final bool isPast = scheduledTime.isBefore(DateTime.now());
 
-                  return ListView.builder(
-                    itemCount: filteredDocs.length,
-                    itemBuilder: (context, index) {
-                      final doc = filteredDocs[index];
-                      final data = doc.data() as Map<String, dynamic>;
-                      final DateTime scheduledTime =
-                          DateTime.parse(data['scheduledTime']);
-                      final bool isPast =
-                          scheduledTime.isBefore(DateTime.now());
+                    return Card(
+                      elevation: 2,
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      color: isPast
+                          ? Colors.white
+                          : const Color.fromARGB(255, 101, 151, 175), // Background color change
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            // Status indicator
+                            Container(
+                              width: 5,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                color: isPast
+                                    ? Colors.red.withOpacity(0.7)
+                                    : button,
+                                borderRadius: BorderRadius.circular(2),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
 
-                      return Container(
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
-                              spreadRadius: 1,
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
+                            // Image thumbnail (if available)
+                            if (data['imageUrl'] != null) ...[
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  data['imageUrl'],
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                          Icons.image_not_supported,
+                                          size: 20),
+                                    );
+                                  },
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      width: 50,
+                                      height: 50,
+                                      color: Colors.grey[200],
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+
+                            // Task Details
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    data['title'],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: isPast
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      color:
+                                          isPast ? Colors.grey : Colors.black87,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 14,
+                                          color: isPast
+                                              ? Colors.grey
+                                              : Colors.black54),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        DateFormat('MMM dd, HH:mm')
+                                            .format(scheduledTime),
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: isPast
+                                                ? Colors.grey
+                                                : Colors.black54),
+                                      ),
+                                      if (isPast) ...[
+                                        const SizedBox(width: 8),
+                                        Icon(Icons.warning_rounded,
+                                            size: 12,
+                                            color: Colors.red.withOpacity(0.8)),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          'Past due',
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w500,
+                                              color:
+                                                  Colors.red.withOpacity(0.8)),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // Delete button
+                            IconButton(
+                              icon: Icon(Icons.delete_outline_rounded,
+                                  color: Colors.red.withOpacity(0.7), size: 20),
+                              onPressed: () =>
+                                  deleteTask(doc.id, data['notificationId']),
                             ),
                           ],
                         ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () {},
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 10),
-                                child: Row(
-                                  children: [
-                                    // Status indicator
-                                    Container(
-                                      width: 3,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                        color: isPast
-                                            ? Colors.red.withOpacity(0.7)
-                                            : Colors.green.withOpacity(0.7),
-                                        borderRadius:
-                                            BorderRadius.circular(1.5),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    // Content
-                                    Expanded(
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            data['title'],
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                              decoration: isPast
-                                                  ? TextDecoration.lineThrough
-                                                  : null,
-                                              color: isPast
-                                                  ? Colors.grey
-                                                  : Colors.black87,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.access_time,
-                                                size: 14,
-                                                color: isPast
-                                                    ? Colors.grey
-                                                    : Colors.black54,
-                                              ),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                DateFormat('MMM dd, HH:mm')
-                                                    .format(scheduledTime),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: isPast
-                                                      ? Colors.grey
-                                                      : Colors.black54,
-                                                ),
-                                              ),
-                                              if (isPast) ...[
-                                                const SizedBox(width: 8),
-                                                Icon(
-                                                  Icons.warning_rounded,
-                                                  size: 12,
-                                                  color: Colors.red
-                                                      .withOpacity(0.8),
-                                                ),
-                                                const SizedBox(width: 2),
-                                                Text(
-                                                  'Past due',
-                                                  style: TextStyle(
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Colors.red
-                                                        .withOpacity(0.8),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    // Delete button
-                                    Material(
-                                      color: Colors.transparent,
-                                      child: InkWell(
-                                        borderRadius: BorderRadius.circular(50),
-                                        onTap: () => deleteTask(
-                                            doc.id, data['notificationId']),
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(6.0),
-                                          child: Icon(
-                                            Icons.delete_outline_rounded,
-                                            color: Colors.red.withOpacity(0.7),
-                                            size: 20,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: Padding(
         padding: const EdgeInsets.all(8.0),
@@ -333,15 +333,35 @@ class _DummyhomepageState extends State<Dummyhomepage> {
 
   Future<void> deleteTask(String docId, int notificationId) async {
     try {
+      // Get the document data before deleting
+      final docSnapshot =
+          await _firestore.collection('notifications').doc(docId).get();
+      final data = docSnapshot.data();
+
+      // Delete from Firestore
       await _firestore.collection('notifications').doc(docId).delete();
+
+      // Cancel notification
       await _notificationService.cancelNotification(notificationId);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Task deleted successfully'),
-          backgroundColor: Colors.green));
+
+      // Show success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Task deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Failed to delete task: $e'),
-          backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete task: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 }
