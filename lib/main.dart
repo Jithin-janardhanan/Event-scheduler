@@ -10,6 +10,7 @@ Future<void> main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService().initNotification();
+
   runApp(MyApp());
 }
 
@@ -20,9 +21,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      color: Colors.white,
-      debugShowCheckedModeBanner: false,
-      home: SplashScreen(),
-    );
+        color: Colors.white,
+        debugShowCheckedModeBanner: false,
+        home: SplashScreen());
   }
 }

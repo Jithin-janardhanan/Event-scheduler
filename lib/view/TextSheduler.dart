@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:new_todo/controller/background_service.dart';
 import 'package:new_todo/model/notification_sevice.dart';
 import 'package:new_todo/view/dummyhomepage.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -30,6 +31,8 @@ class _SheduleTaskState extends State<SheduleTask> {
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   String? _uploadedImageUrl;
+  final BackgroundService _backgroundService = BackgroundService();
+  String _statusText = 'Press Start to listen for wake word';
 
   GoogleTranslator translator = GoogleTranslator();
 
@@ -81,6 +84,14 @@ class _SheduleTaskState extends State<SheduleTask> {
 
   void _toggleListening() async {
     if (!isListening) {
+      // Stop the wakeup feature if it is active
+      if (_backgroundService.isListening) {
+        await _backgroundService.stopListening();
+        setState(() {
+          _statusText = 'Stopped listening for wake word';
+        });
+      }
+
       bool available = await _speech.initialize();
       if (available) {
         setState(() => isListening = true);
@@ -104,6 +115,14 @@ class _SheduleTaskState extends State<SheduleTask> {
     } else {
       setState(() => isListening = false);
       _speech.stop();
+
+      // Restart the wakeup feature if it was previously active
+      if (!_backgroundService.isListening) {
+        await _backgroundService.startListening();
+        setState(() {
+          _statusText = 'Listening for wake word "Hey ToDo"...';
+        });
+      }
     }
   }
 
@@ -877,8 +896,3 @@ Future<String?> uploadToCloudinary(File imagePath) async {
     throw Exception('Error uploading image: $e');
   }
 }
-
-
-
-
-

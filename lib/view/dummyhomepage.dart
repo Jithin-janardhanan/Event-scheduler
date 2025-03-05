@@ -1,10 +1,16 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:intl/intl.dart';
+
 import 'package:new_todo/model/notification_sevice.dart';
 import 'package:new_todo/view/TextSheduler.dart';
 import 'package:new_todo/view/loginPage.dart';
+import 'package:permission_handler/permission_handler.dart';
+
+import '../controller/background_service.dart';
 
 class Dummyhomepage extends StatefulWidget {
   const Dummyhomepage({super.key});
@@ -18,6 +24,49 @@ class _DummyhomepageState extends State<Dummyhomepage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final NotificationService _notificationService = NotificationService();
   final TextEditingController _searchController = TextEditingController();
+  final BackgroundService _backgroundService = BackgroundService();
+  bool _isListening = false;
+  
+  String _statusText = 'Press Start to listen for wake word';
+  @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+  }
+
+  Future<void> _requestPermissions() async {
+    if (await Permission.microphone.request().isGranted) {
+      setState(() {
+        _statusText = 'Microphone permission granted. Ready to initialize.';
+      });
+    } else {
+      setState(() {
+        _statusText = 'Microphone permission denied';
+      });
+    }
+  }
+
+  Future<void> _startListening() async {
+    await FlutterForegroundTask.startService(
+      notificationTitle: "Listening for 'Hey ToDo'",
+      notificationText: "Wake word detection is active",
+    );
+
+    await _backgroundService.startListening();
+    setState(() {
+      _isListening = true;
+      _statusText = 'Listening for wake word "Hey ToDo"...';
+    });
+  }
+
+  Future<void> _stopListening() async {
+    await FlutterForegroundTask.stopService();
+    await _backgroundService.stopListening();
+    setState(() {
+      _isListening = false;
+      _statusText = 'Stopped listening';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,10 +76,14 @@ class _DummyhomepageState extends State<Dummyhomepage> {
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 80.0,
-        backgroundColor: sandColor,
-        leading: const Padding(
-          padding: EdgeInsets.only(left: 16.0),
-          child: Icon(Icons.person, size: 30, color: button),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF2196F3), Color(0xFF21CBF3)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
         ),
         title: FutureBuilder<DocumentSnapshot>(
           future: FirebaseFirestore.instance
@@ -48,7 +101,7 @@ class _DummyhomepageState extends State<Dummyhomepage> {
             return Text(
               "Hi, ${userData['username'] ?? 'User'}!",
               style:
-                  TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
             );
           },
         ),
@@ -87,9 +140,13 @@ class _DummyhomepageState extends State<Dummyhomepage> {
                   },
                 );
               },
-              icon: const Icon(Icons.logout, color: button),
+              icon: const Icon(Icons.logout, color: Colors.white),
             ),
           ),
+          ElevatedButton(
+            onPressed: _isListening ? _stopListening : _startListening,
+            child: Text(_isListening ? 'Stop Listening' : 'Start Listening'),
+          )
         ],
       ),
       backgroundColor: sandColor,
@@ -98,21 +155,33 @@ class _DummyhomepageState extends State<Dummyhomepage> {
           // Search Bar
           Padding(
             padding: const EdgeInsets.all(13.0),
-            child: TextFormField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search',
-                prefixIcon: const Icon(Icons.search, color: button),
-                fillColor: Colors.white,
-                filled: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10.0),
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 11.0),
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.5),
+                    spreadRadius: 2,
+                    blurRadius: 5,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
-              onChanged: (value) {
-                setState(() {});
-              },
+              child: TextFormField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  prefixIcon: const Icon(Icons.search, color: button),
+                  fillColor: Colors.white,
+                  filled: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 11.0),
+                ),
+                onChanged: (value) {
+                  setState(() {});
+                },
+              ),
             ),
           ),
 
@@ -181,7 +250,8 @@ class _DummyhomepageState extends State<Dummyhomepage> {
                       ),
                       color: isPast
                           ? Colors.white
-                          : const Color.fromARGB(255, 101, 151, 175), // Background color change
+                          : const Color.fromARGB(
+                              255, 101, 151, 175), // Background color change
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 10),
@@ -325,6 +395,8 @@ class _DummyhomepageState extends State<Dummyhomepage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
           child: const Icon(Icons.add, size: 30, color: Colors.white),
+          tooltip: 'Add Task',
+          elevation: 5,
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
