@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +25,7 @@ class _DummyhomepageState extends State<Dummyhomepage> {
   final TextEditingController _searchController = TextEditingController();
   final BackgroundService _backgroundService = BackgroundService();
   bool _isListening = false;
-  
+
   String _statusText = 'Press Start to listen for wake word';
   @override
   void initState() {

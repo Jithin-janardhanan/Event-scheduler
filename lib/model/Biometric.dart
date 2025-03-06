@@ -41,7 +41,7 @@ class _BiometricState extends State<Biometric> {
             }
           },
           child: Text(
-            isAuthenticated ? 'Go to Home Page' : 'Go to Signup Page',
+           'Go to Signup Page',
           ),
         ),
       ),
